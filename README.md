@@ -1,7 +1,8 @@
 # Spur AI Chat Assignment
 
 This project implements a mini AI support agent for a live chat widget, fulfilling the Spur take-home assignment requirements. It uses Next.js (App Router), React, Tailwind CSS, Supabase for persistence, and an LLM (e.g., OpenAI) for AI responses.
-
+[Demo 
+](https://youtu.be/zX4la4cJFZE)
 ## Features
 
 - **Interactive Chat UI:** Scrollable message list, input box, send button, auto-scroll.
