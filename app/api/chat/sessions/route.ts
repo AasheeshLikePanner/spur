@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data: conversations, error } = await supabase
       .from('conversations')
-      .select('id, created_at')
+      .select('id, name, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 

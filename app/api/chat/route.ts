@@ -93,17 +93,18 @@ export async function POST(req: NextRequest) {
 
     if (historyResult.error) throw new Error('Failed to fetch history');
 
-    // AUTO-TITLE LOGIC: If this is the FIRST message, generate a title
+    let generatedTitle: string | null = null;
     if (historyResult.data.length === 1 && historyResult.data[0].sender === 'user') {
-      generateChatTitle(message).then(async (title: string) => {
+      try {
+        generatedTitle = await generateChatTitle(message);
         await supabase
           .from('conversations')
-          .update({ name: title })
+          .update({ name: generatedTitle })
           .eq('id', conversationId);
-        console.log(`[Chat] Auto-titled conversation ${conversationId} as: ${title}`);
-      }).catch(err => {
-        console.error('[Chat] Auto-titing failed:', err);
-      });
+        console.log(`[Chat] Auto-titled conversation ${conversationId} as: ${generatedTitle}`);
+      } catch (err) {
+        console.error('[Chat] Auto-title failed:', err);
+      }
     }
 
     const conversationHistory: ConversationEntry[] = historyResult.data.map(msg => ({
@@ -127,7 +128,11 @@ export async function POST(req: NextRequest) {
       console.error('[Memory] Extraction failed:', err);
     }
 
-    return NextResponse.json({ reply: aiResponse, sessionId: conversationId }, { status: 200 });
+    return NextResponse.json({
+      reply: aiResponse,
+      sessionId: conversationId,
+      title: generatedTitle
+    }, { status: 200 });
 
   } catch (error) {
     console.error('Chat API error:', error);

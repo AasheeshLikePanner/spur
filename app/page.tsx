@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getStoredUserName, setStoredUserName } from '@/lib/clientUtils';
+import { getStoredUserName, getStoredDisplayName, setStoredUserName } from '@/lib/clientUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ const MAX_NAME_CHAR_COUNT = 20;
 
 export default function ChatPage() {
   const [userId, setUserId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -39,6 +40,7 @@ export default function ChatPage() {
   // Dialog States
   const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
   const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [newChatName, setNewChatName] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [isCreatingChat, setIsCreatingChat] = useState(false);
@@ -47,8 +49,10 @@ export default function ChatPage() {
 
   useEffect(() => {
     const storedName = getStoredUserName();
+    const storedDisplay = getStoredDisplayName();
     if (storedName) {
-      setUserId(storedName);
+      setUserId(storedName); // lowercase for API
+      setDisplayName(storedDisplay); // original for display
     } else {
       setIsNameDialogOpen(true);
     }
@@ -117,8 +121,9 @@ export default function ChatPage() {
       return;
     }
 
-    setStoredUserName(trimmedName);
-    setUserId(trimmedName);
+    setStoredUserName(trimmedName); // Stores both lowercase and display
+    setUserId(trimmedName.toLowerCase()); // lowercase for API
+    setDisplayName(trimmedName); // original for display
     setIsNameDialogOpen(false);
     toast.success(`Welcome, ${trimmedName}!`);
   };
@@ -203,6 +208,10 @@ export default function ChatPage() {
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, aiMessage]);
+
+      if (data.title) {
+        await fetchConversations();
+      }
     } catch (err) {
       toast.error('Failed to send message');
       setMessages((prev) => prev.filter(m => m.id !== newUserMessage.id));
@@ -232,7 +241,13 @@ export default function ChatPage() {
         <div className="p-4 border-b">
           <div className="mb-4 px-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">User</p>
-            <p className="font-bold text-lg truncate">{userId}</p>
+            <p className="font-bold text-lg truncate">{displayName || userId}</p>
+            <button
+              onClick={() => setIsLogoutDialogOpen(true)}
+              className="text-xs text-muted-foreground hover:text-destructive mt-1 underline"
+            >
+              Logout
+            </button>
           </div>
           <Button
             onClick={handleCreateChat}
@@ -341,6 +356,32 @@ export default function ChatPage() {
         </div>
       </section>
 
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Logout</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to logout? This will clear all your local data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLogoutDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+            >
+              Logout
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Name Identiy Dialog (Blocking) */}
       <Dialog open={isNameDialogOpen}>
