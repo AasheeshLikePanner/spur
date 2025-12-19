@@ -125,23 +125,10 @@ The application will be accessible at `http://localhost:3000`.
 - Supabase server-side integration (`lib/supabase/server.ts`): Provides a secure way to interact with the Supabase database from the backend.
 - `lib/llm.ts`: Encapsulates the logic for interacting with the chosen LLM provider (e.g., Groq). It handles prompt construction, API calls, and error handling.
 
-### Data Model & Memory
-The core "memory" of the AI agent is stored across the `conversations` and `messages` tables, linked by a persistent `user_id` on the client-side.
-
-- **`conversations` table:** Serves as the tracking mechanism for individual chat sessions. Each entry links a unique `conversation_id` to a `user_id`. This allows the system to retrieve all past discussions for a returning user.
-- **`messages` table:** This is the detailed record of the "memory." It stores every user and AI message, associated with its `conversation_id`.
-
 **How Memory is Utilized:**
 1.  **User Identification:** A `user_id` (a UUID stored in `localStorage`) uniquely identifies a user across visits. This `user_id` is sent with all API requests.
 2.  **Conversation Retrieval:** When a user returns, their `user_id` allows the frontend to fetch a list of all their past `conversations` (`GET /api/chat/sessions`).
 3.  **Contextual LLM Interaction:** When a conversation is active (either a new one or a resumed one), the backend fetches *all* messages (`GET /api/chat/history`) belonging to that `conversation_id`. This complete historical dialogue is then passed to the LLM as context in the prompt. This enables the AI to "remember" previous interactions within that specific chat and respond contextually.
-
-### LLM Notes
-
-- **Provider:** Groq (using `llama3-8b-8192` or similar).
-- **Prompting:** The LLM is prompted with a system message defining its role as a helpful support agent for a fictional e-commerce store, followed by the entire conversation history. This ensures contextual and relevant responses.
-  - **Fictional Store Knowledge:** Basic FAQs (shipping, returns, support hours) are hardcoded into the system prompt to seed the agent with domain knowledge.
-- **Trade-offs:** Passing the entire conversation history can become expensive for very long chats due to token usage. A more advanced solution would involve summarization of older messages or RAG (Retrieval Augmented Generation) for domain-specific knowledge to manage token limits and cost more effectively.
 
 ### Advanced Memory / Personalization (Conceptual)
 The current system provides memory at the conversation level, sending the full chat history to the LLM for context. To achieve a more "advanced" memory or a "memory graph" that allows the AI to "know" the user better across *different conversations* or over a longer period, several techniques would be employed:
@@ -154,16 +141,6 @@ The current system provides memory at the conversation level, sending the full c
 
 These approaches would evolve the system from simple conversational recall to a more sophisticated, personalized, and "remembering" AI agent.
 
-## How We'll Evaluate (Self-Check)
-
-- **Correctness:**
-  - Can we chat end-to-end and get sane answers from the AI? Yes.
-  - Are conversations persisted? Yes, in Supabase.
-  - Does it handle basic error cases? Yes, LLM/API errors are gracefully surfaced.
-- **Code Quality & Best Practices:** Clean, readable, idiomatic TypeScript/JS, logical structure.
-- **Architecture & Extensibility:** LLM integration is encapsulated. Data schema supports future extensions.
-- **Robustness:** Input validation (non-empty messages). Graceful failure for LLM/API issues.
-- **Product & UX Sense:** Intuitive chat experience with dark theme, loading states.
 
 ## If I had more time...
 
